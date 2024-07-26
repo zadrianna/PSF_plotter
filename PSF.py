@@ -12,6 +12,7 @@ from scipy.optimize import curve_fit
 ## Inputs Needed
 # Load the image stack from a TIFF file
 imageStack = tiff.imread('C:\\Users\\adriannazgraj\\Desktop\\PSF_2.tif')
+output_directory = 'C:\\Users\\adriannazgraj\\Desktop'  # choose the directory where you want the output plots to be saved
 
 # Define the real size of the pixel in nanometers (nm)
 pixel_size_nm = 27  # Change this to your pixel size
@@ -95,5 +96,7 @@ axs[2].legend()
 
 plt.tight_layout()
 plt.show()
+
+fig.savefig(f'{output_directory}\\PSF_profiles.tiff')
 
 print("hi mom")
