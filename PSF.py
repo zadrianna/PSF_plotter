@@ -7,6 +7,7 @@ By @ Adrianna Zgraj
 import numpy as np
 import matplotlib.pyplot as plt
 import tifffile as tiff
+from scipy.optimize import curve_fit
 
 ## Inputs Needed
 # Load the image stack from a TIFF file
@@ -40,51 +41,59 @@ xProfile = np.asarray(imageStack[y, :, nz//2])
 yProfile = np.asarray(imageStack[x, :, nz//2])
 zProfile = np.asarray(imageStack[y, x, :])
 
-
-def find_fwhm(arr):
-    max_idx = np.argmax(arr)
-    half_max = round(arr.min() + ((arr.max()-arr.min())/2))
-    indices = np.where(np.isclose(arr, half_max, atol=3000))[0]  # Get all indices where value is x
-    less_indices = indices[indices < max_idx]  # Get all indices less than y
-    greater_indices = indices[indices > max_idx]  # Get all indices greater than y
-    if len(less_indices) > 0 and len(greater_indices) > 0:
-        fwhm = (greater_indices[0] - less_indices[0])*pixel_size_nm
-
-        return fwhm  # Return first index which is less than y and which is greater than y
-    else:
-        return None, None  # In case no matching indices found
-
-## FWHM
-
-x_fwhm = find_fwhm(xProfile)
-y_fwhm = find_fwhm(yProfile)
-z_fwhm = find_fwhm(zProfile)
-
-
-## Plotting
-
 xData = np.arange(len(xProfile))
 yData = np.arange(len(yProfile))
 zData = np.arange(len(zProfile))
 
+# Create the gaussian function
+def gaussian(x, a, b, c, d):
+    return a*np.exp(-np.power(x - b, 2)/(2*np.power(c, 2))) + d
+
+## FWHM calculations
+x_p0 = [xProfile.max(),xData.mean(),xData.std(),xProfile.min()]
+x_popt, x_pcov = curve_fit(gaussian, xData, xProfile,x_p0)
+x_fwhm = round((2*np.sqrt(2*np.log(2))*np.abs(x_popt[2])) * pixel_size_nm,3)
+print("X FWHM is: " + str(x_fwhm))
+
+
+y_p0 = [yProfile.max(),yData.mean(),yData.std(),yProfile.min()]
+y_popt, y_pcov = curve_fit(gaussian, yData, yProfile, y_p0)
+y_fwhm = round((2*np.sqrt(2*np.log(2))*np.abs(y_popt[2])) * pixel_size_nm,3)
+print("Y FWHM is: " + str(y_fwhm))
+
+z_p0 = [zProfile.max(),zData.mean(),zData.std(),zProfile.min()]
+z_popt, z_pcov = curve_fit(gaussian, zData, zProfile, z_p0)
+z_fwhm = round((2*np.sqrt(2*np.log(2))*np.abs(z_popt[2]))*pixel_size_nm,3)
+print("Z FWHM is: " + str(z_fwhm))
+
+
+## Plotting
 fig, axs = plt.subplots(3, 1, figsize=(8, 12))
 axs[0].plot(xData*pixel_size_nm, xProfile, 'b.', markersize=10, label='Data')
+axs[0].plot(xData*pixel_size_nm, gaussian(xData,*x_popt), 'r-', markersize=10, label='Fitted curve')
 axs[0].set_title('X Profile and Gaussian Fit')
 axs[0].set_xlabel('nm')
 axs[0].set_ylabel('Intensity')
 axs[0].text(x=(xData.max()/3),y=(xProfile.min() + (xProfile.max()-xProfile.min())/2),s=f"FWHM:{x_fwhm} nm")
+axs[0].legend()
 
 axs[1].plot(yData*pixel_size_nm, yProfile, 'b.', markersize=10, label='Data')
+axs[1].plot(yData*pixel_size_nm, gaussian(yData,*y_popt), 'r-', markersize=10, label='Fitted curve')
 axs[1].set_title('Y Profile and Gaussian Fit')
 axs[1].set_xlabel('nm')
 axs[1].set_ylabel('Intensity')
 axs[1].text(x=(yData.max()/3),y=(yProfile.min() + (yProfile.max()-yProfile.min())/2),s=f"FWHM:{y_fwhm} nm")
+axs[1].legend()
 
 axs[2].plot(zData*pixel_size_nm, zProfile, 'b.', markersize=10, label='Data')
+axs[2].plot(zData*pixel_size_nm, gaussian(zData,*z_popt), 'r-', markersize=10, label='Fitted curve')
 axs[2].set_title('Z Profile and Gaussian Fit')
 axs[2].set_xlabel('nm')
 axs[2].set_ylabel('Intensity')
 axs[2].text(x=(zData.max()/3),y=(zProfile.min() + (zProfile.max()-zProfile.min())/2),s=f"FWHM:{z_fwhm} nm")
+axs[2].legend()
 
 plt.tight_layout()
 plt.show()
+
+print("hi mom")
