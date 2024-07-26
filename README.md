@@ -2,7 +2,7 @@
 
 **What this script does:**
 It takes your image of a bead, finds the center and plots the PSF of the x,y, and z profile.
-The script also calculates the full-width half-minimum.
+The script also calculates the full-width half-minimum from a fitted Gaussian curve.
 
 **What you need**:
 - Your bead image (tiff, stack, 16-bit, the whole bead needs to be visible in all dimensions, ideally have the bead center rougly in the middle)
